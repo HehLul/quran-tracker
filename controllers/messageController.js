@@ -1,6 +1,6 @@
 // controllers/messageController.js
 
-// Handle incoming messages
+// READ INCOMING MESSAGES
 async function handleIncomingMessages(messageUpdate, sock) {
   console.log("📤 Message upsert event triggered!");
   const { messages, type } = messageUpdate;
@@ -10,12 +10,6 @@ async function handleIncomingMessages(messageUpdate, sock) {
   //main message parser
   messages.forEach(async (message) => {
     console.log("📩 Message incoming!");
-
-    // Skip messages sent by me
-    if (message.key.fromMe) {
-      console.log("⏭️ Skipping my own message");
-      return;
-    }
 
     // Skip if no message content
     if (!message.message) {
@@ -38,7 +32,7 @@ async function handleIncomingMessages(messageUpdate, sock) {
   });
 }
 
-// Handle different bot commands
+// HANDLE COMMANDS
 async function handleCommands(messageText, from, sock) {
   const text = messageText.toLowerCase();
 
@@ -53,17 +47,45 @@ async function handleCommands(messageText, from, sock) {
     const { sendTestReminder } = require("./reminderController");
     await sendTestReminder(sock);
   }
+  // Handle /log command
+  if (text.startsWith("/log")) {
+    console.log("📖 Processing /log command...");
 
-  if (text.includes("test")) {
-    console.log("✅ Sending test response...");
-    await sock.sendMessage(from, { text: "Bot is working! 🤖" });
-  }
+    // Parse the command: /log revise 9:16 9:48
+    const parts = messageText.trim().split(" ");
 
-  // Quran tracking commands (to be expanded)
-  if (text.includes("quran")) {
-    await sock.sendMessage(from, {
-      text: "📖 Masha'Allah! How many pages did you read today?",
-    });
+    if (parts.length === 4) {
+      const command = parts[0]; // "/log"
+      const action = parts[1].toLowerCase(); // "revise", "read", "memorize"
+      const startVerse = parts[2]; // "9:16"
+      const endVerse = parts[3]; // "9:48"
+
+      // Valid actions
+      const validActions = ["read", "revise", "memorize"];
+
+      // Validate action and verse format
+      if (!validActions.includes(action)) {
+        await sock.sendMessage(from, {
+          text: "❌ Invalid action! Use: read, revise, or memorize\nExample: /log revise 9:16 9:48",
+        });
+      } else if (startVerse.includes(":") && endVerse.includes(":")) {
+        console.log(`📝 Logging: ${action} from ${startVerse} to ${endVerse}`);
+
+        // TODO: Save to database here
+
+        await sock.sendMessage(from, {
+          text: `✅ Logged successfully!\n📖 ${action}: ${startVerse} → ${endVerse}\nMasha'Allah! Keep it up! 🤲`,
+        });
+      } else {
+        await sock.sendMessage(from, {
+          text: "❌ Invalid format!\n Use: /log [action] [start] [end]\nExample: /log revise 9:16 9:48\n(Chapter:Verse format required)",
+        });
+      }
+    } else {
+      await sock.sendMessage(from, {
+        text: "❌ Invalid format!\n Use: /log [action] [start] [end]\nExample: /log revise 9:16 9:48\n(Chapter:Verse format required)",
+      });
+    }
   }
 }
 
