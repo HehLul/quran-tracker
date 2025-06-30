@@ -1,5 +1,10 @@
 // controllers/messageController.js
-const { createOrGetUser, saveQuranLog } = require("./databaseController");
+const {
+  createOrGetUser,
+  saveQuranLog,
+  getLastUserEntry,
+  deleteLogEntry,
+} = require("./databaseController");
 
 // READ INCOMING MESSAGES
 async function handleIncomingMessages(messageUpdate, sock) {
@@ -162,34 +167,48 @@ Barakallahu feek! 🤲`;
   if (text.startsWith("/undo")) {
     console.log("↩️ Processing /undo command...");
 
-    // TODO: Get user's last entry from database and delete it
-    // const lastEntry = await getLastUserEntry(userPhoneNumber);
-    // if (lastEntry) {
-    //   await deleteEntry(lastEntry.id);
-    //   // Show what was deleted
-    // }
+    try {
+      // Get user identifier (same logic as /log command)
+      const userId = message.key.participant || message.key.remoteJid;
+      const cleanUserId = userId
+        .replace("@s.whatsapp.net", "")
+        .replace("@lid", "");
+      const pushName = message.pushName || cleanUserId;
 
-    // For now, placeholder response
-    await sock.sendMessage(from, {
-      text: "↩️ Undo functionality coming soon!\n\nOnce database is connected, this will:\n• Delete your most recent log entry\n• Show you what was removed\n• Update your stats accordingly",
-    });
+      console.log(`👤 Looking for last entry for user: ${cleanUserId}`);
 
-    // Future implementation will be:
-    /*
-  const userPhone = message.key.remoteJid.replace('@s.whatsapp.net', '');
-  const lastEntry = await getLastUserEntry(userPhone);
-  
-  if (lastEntry) {
-    await deleteLogEntry(lastEntry.id);
-    await sock.sendMessage(from, { 
-      text: `✅ Undone!\nRemoved: ${lastEntry.action} ${lastEntry.start_verse} → ${lastEntry.end_verse}\nLogged at: ${lastEntry.logged_at}` 
-    });
-  } else {
-    await sock.sendMessage(from, { 
-      text: "❌ No recent entries found to undo." 
-    });
-  }
-  */
+      // Get user's most recent log entry
+      const lastEntry = await getLastUserEntry(cleanUserId);
+
+      if (lastEntry) {
+        // Delete the entry
+        const deletedEntry = await deleteLogEntry(lastEntry.id);
+
+        // Format the timestamp for display
+        const loggedTime = new Date(lastEntry.logged_at).toLocaleString();
+
+        console.log(
+          `✅ Successfully deleted entry: ${lastEntry.action} ${lastEntry.start_verse}-${lastEntry.end_verse}`
+        );
+
+        await sock.sendMessage(from, {
+          text: `✅ Undone successfully!\n\n🗑️ Removed:\n📖 ${lastEntry.action}: ${lastEntry.start_verse} → ${lastEntry.end_verse}\n📅 Logged: ${loggedTime}\n👤 User: ${pushName}\n\nEntry has been deleted from your history.`,
+        });
+      } else {
+        console.log(`❌ No entries found for user: ${cleanUserId}`);
+        await sock.sendMessage(from, {
+          text: `❌ No recent entries found to undo.\n👤 User: ${pushName}\n\nMake sure you have logged some Quran reading first using /log command.`,
+        });
+      }
+    } catch (error) {
+      console.error("❌ Undo error details:");
+      console.error("Error message:", error.message);
+      console.error("Full error:", error);
+
+      await sock.sendMessage(from, {
+        text: `❌ Sorry, there was an error with undo. Please try again later.\n\nError: ${error.message}`,
+      });
+    }
   }
 }
 

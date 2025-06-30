@@ -155,10 +155,60 @@ function calculatePages(startVerse, endVerse) {
   }
 }
 
+// Get user's most recent log entry
+async function getLastUserEntry(userId) {
+  try {
+    const { data, error } = await supabase
+      .from("quran_logs")
+      .select(
+        `
+        *,
+        users!inner(phone_number)
+      `
+      )
+      .eq("users.phone_number", userId)
+      .order("logged_at", { ascending: false })
+      .limit(1)
+      .single();
+
+    if (error && error.code !== "PGRST116") {
+      // PGRST116 = no rows found
+      throw error;
+    }
+
+    return data || null;
+  } catch (error) {
+    console.error("❌ Error getting last entry:", error.message);
+    throw error;
+  }
+}
+
+// Delete a log entry by ID
+async function deleteLogEntry(entryId) {
+  try {
+    const { data, error } = await supabase
+      .from("quran_logs")
+      .delete()
+      .eq("id", entryId)
+      .select()
+      .single();
+
+    if (error) throw error;
+
+    console.log(`🗑️ Deleted log entry ID: ${entryId}`);
+    return data;
+  } catch (error) {
+    console.error("❌ Error deleting entry:", error.message);
+    throw error;
+  }
+}
+
 module.exports = {
   supabase,
   testConnection,
   createOrGetUser,
   saveQuranLog,
   calculatePages,
+  getLastUserEntry,
+  deleteLogEntry,
 };
