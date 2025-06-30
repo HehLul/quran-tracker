@@ -1,4 +1,5 @@
 // controllers/messageController.js
+const { createOrGetUser, saveQuranLog } = require("./databaseController");
 
 // READ INCOMING MESSAGES
 async function handleIncomingMessages(messageUpdate, sock) {
@@ -72,11 +73,42 @@ async function handleCommands(messageText, from, sock) {
       } else if (startVerse.includes(":") && endVerse.includes(":")) {
         console.log(`📝 Logging: ${action} from ${startVerse} to ${endVerse}`);
 
-        // TODO: Save to database here
+        try {
+          // Extract phone number from WhatsApp ID
+          const phoneNumber = from.replace("@s.whatsapp.net", "");
 
-        await sock.sendMessage(from, {
-          text: `✅ Logged successfully!\n📖 ${action}: ${startVerse} → ${endVerse}\nMasha'Allah! Keep it up! 🤲`,
-        });
+          // Get or create user
+          const user = await createOrGetUser(phoneNumber);
+
+          // Calculate estimated pages
+          const { calculatePages } = require("./databaseController");
+          const estimatedPages = calculatePages(startVerse, endVerse);
+
+          // Save to database
+          const logEntry = await saveQuranLog(
+            user.id,
+            action,
+            startVerse,
+            endVerse,
+            estimatedPages
+          );
+
+          console.log(`✅ Successfully saved log entry ID: ${logEntry.id}`);
+
+          await sock.sendMessage(from, {
+            text: `✅ Logged successfully!\n📖 ${action}: ${startVerse} → ${endVerse}\n📄 Estimated ${estimatedPages} page(s)\nMasha'Allah! Keep it up! 🤲`,
+          });
+        } catch (error) {
+          console.error("❌ Database error details:");
+          console.error("Error message:", error.message);
+          console.error("Error code:", error.code);
+          console.error("Full error:", error);
+          console.error("Stack trace:", error.stack);
+
+          await sock.sendMessage(from, {
+            text: `❌ Sorry, there was an error saving your log. Please try again later.\n\nError: ${error.message}`,
+          });
+        }
       } else {
         await sock.sendMessage(from, {
           text: "❌ Invalid format!\n Use: /log [action] [start] [end]\nExample: /log revise 9:16 9:48\n(Chapter:Verse format required)",
