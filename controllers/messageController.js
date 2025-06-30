@@ -42,6 +42,7 @@ async function handleCommands(messageText, from, sock) {
     await sock.sendMessage(from, { text: "🏓 Pong!" });
   }
 
+  // Test Reminder
   if (text.includes("test reminder")) {
     console.log("🧪 Sending test reminder to group...");
     const { sendTestReminder } = require("./reminderController");
@@ -86,6 +87,58 @@ async function handleCommands(messageText, from, sock) {
         text: "❌ Invalid format!\n Use: /log [action] [start] [end]\nExample: /log revise 9:16 9:48\n(Chapter:Verse format required)",
       });
     }
+  }
+  // Handle /help command
+  if (text.startsWith("/help")) {
+    console.log("📋 Showing help menu...");
+
+    const helpMessage = `🤖 *QuranTracker Bot Commands*
+
+📖 *Logging Commands:*
+- \`/log [action] [start] [end]\` - Log your reading
+  Actions: read, revise, memorize
+  Example: \`/log revise 9:16 9:48\`
+
+⚙️ *Utility Commands:*
+- \`/help\` - Show this menu
+- \`/undo\` - Delete your last entry
+
+Barakallahu feek! 🤲`;
+
+    await sock.sendMessage(from, { text: helpMessage });
+  }
+  //Handle /undo command
+  if (text.startsWith("/undo")) {
+    console.log("↩️ Processing /undo command...");
+
+    // TODO: Get user's last entry from database and delete it
+    // const lastEntry = await getLastUserEntry(userPhoneNumber);
+    // if (lastEntry) {
+    //   await deleteEntry(lastEntry.id);
+    //   // Show what was deleted
+    // }
+
+    // For now, placeholder response
+    await sock.sendMessage(from, {
+      text: "↩️ Undo functionality coming soon!\n\nOnce database is connected, this will:\n• Delete your most recent log entry\n• Show you what was removed\n• Update your stats accordingly",
+    });
+
+    // Future implementation will be:
+    /*
+  const userPhone = message.key.remoteJid.replace('@s.whatsapp.net', '');
+  const lastEntry = await getLastUserEntry(userPhone);
+  
+  if (lastEntry) {
+    await deleteLogEntry(lastEntry.id);
+    await sock.sendMessage(from, { 
+      text: `✅ Undone!\nRemoved: ${lastEntry.action} ${lastEntry.start_verse} → ${lastEntry.end_verse}\nLogged at: ${lastEntry.logged_at}` 
+    });
+  } else {
+    await sock.sendMessage(from, { 
+      text: "❌ No recent entries found to undo." 
+    });
+  }
+  */
   }
 }
 
