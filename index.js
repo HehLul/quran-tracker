@@ -18,6 +18,9 @@ const getMessage = (key) => {
 
 //MAIN FUNCTION
 async function WAbot() {
+  const { testConnection } = require("./controllers/databaseController");
+  testConnection();
+
   const { state, saveCreds } = await useMultiFileAuthState("auth"); // To save WA auth, not have to constantly scan qr code
 
   const sock = makeWASocket({
