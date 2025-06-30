@@ -11,7 +11,11 @@ async function handleIncomingMessages(messageUpdate, sock) {
   //main message parser
   messages.forEach(async (message) => {
     console.log("📩 Message incoming!");
-
+    // Skip messages sent by me
+    if (message.key.fromMe) {
+      console.log("⏭️ Skipping my own message");
+      return;
+    }
     // Skip if no message content
     if (!message.message) {
       console.log("⏭️ Skipping message with no content");
@@ -29,12 +33,12 @@ async function handleIncomingMessages(messageUpdate, sock) {
     console.log(`Text: "${messageText}"`);
 
     // Handle different commands
-    await handleCommands(messageText, from, sock);
+    await handleCommands(messageText, from, sock, message);
   });
 }
 
 // HANDLE COMMANDS
-async function handleCommands(messageText, from, sock) {
+async function handleCommands(messageText, from, sock, message) {
   const text = messageText.toLowerCase();
 
   // Test responses
@@ -74,11 +78,25 @@ async function handleCommands(messageText, from, sock) {
         console.log(`📝 Logging: ${action} from ${startVerse} to ${endVerse}`);
 
         try {
-          // Extract phone number from WhatsApp ID
-          const phoneNumber = from.replace("@s.whatsapp.net", "");
+          // UPDATED CODE - Get user identifier (LID or phone number)
+          const userId = message.key.participant || message.key.remoteJid;
+          const cleanUserId = userId
+            .replace("@s.whatsapp.net", "")
+            .replace("@lid", "");
+          const displayName = message.pushName || cleanUserId;
+          const pushName = message.pushName; // Store the actual pushName
 
-          // Get or create user
-          const user = await createOrGetUser(phoneNumber);
+          console.log(`👤 User ID: ${cleanUserId}`);
+          console.log(`👤 Display Name: ${displayName}`);
+          console.log(`👤 Push Name: ${pushName}`);
+          console.log(`📱 Group/Chat ID: ${from}`);
+
+          // Get or create user (now with pushName)
+          const user = await createOrGetUser(
+            cleanUserId,
+            displayName,
+            pushName
+          );
 
           // Calculate estimated pages
           const { calculatePages } = require("./databaseController");
@@ -96,14 +114,15 @@ async function handleCommands(messageText, from, sock) {
           console.log(`✅ Successfully saved log entry ID: ${logEntry.id}`);
 
           await sock.sendMessage(from, {
-            text: `✅ Logged successfully!\n📖 ${action}: ${startVerse} → ${endVerse}\n📄 Estimated ${estimatedPages} page(s)\nMasha'Allah! Keep it up! 🤲`,
+            text: `✅ Logged successfully!\n📖 ${action}: ${startVerse} → ${endVerse}\n📄 Estimated ${estimatedPages} page(s)\n👤 User: ${
+              pushName || displayName
+            }\nMasha'Allah! Keep it up! 🤲`,
           });
         } catch (error) {
           console.error("❌ Database error details:");
           console.error("Error message:", error.message);
           console.error("Error code:", error.code);
           console.error("Full error:", error);
-          console.error("Stack trace:", error.stack);
 
           await sock.sendMessage(from, {
             text: `❌ Sorry, there was an error saving your log. Please try again later.\n\nError: ${error.message}`,

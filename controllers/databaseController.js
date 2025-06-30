@@ -61,6 +61,51 @@ async function createOrGetUser(phoneNumber, displayName = null) {
   }
 }
 
+// Add these functions to your existing databaseController.js
+
+// Get or create user
+async function createOrGetUser(phoneNumber, displayName = null) {
+  try {
+    // First, try to find existing user
+    const { data: existingUser, error: selectError } = await supabase
+      .from("users")
+      .select("*")
+      .eq("phone_number", phoneNumber)
+      .single();
+
+    if (existingUser) {
+      console.log(
+        `👤 Found existing user: ${existingUser.display_name || phoneNumber}`
+      );
+      return existingUser;
+    }
+
+    // If user doesn't exist, create new one
+    const { data: newUser, error: insertError } = await supabase
+      .from("users")
+      .insert([
+        {
+          phone_number: phoneNumber,
+          display_name: displayName || phoneNumber,
+          total_pages: 0,
+          current_streak: 0,
+          longest_streak: 0,
+          daily_goal: 5,
+        },
+      ])
+      .select()
+      .single();
+
+    if (insertError) throw insertError;
+
+    console.log(`✨ Created new user: ${newUser.display_name}`);
+    return newUser;
+  } catch (error) {
+    console.error("❌ Error with user:", error.message);
+    throw error;
+  }
+}
+
 // Save Quran log entry
 async function saveQuranLog(
   userId,
