@@ -1,3 +1,5 @@
+require("dotenv").config();
+const { config, configDotenv } = require("dotenv");
 // controllers/messageController.js
 const {
   createOrGetUser,
@@ -16,11 +18,13 @@ async function handleIncomingMessages(messageUpdate, sock) {
   //main message parser
   messages.forEach(async (message) => {
     console.log("📩 Message incoming!");
+
     // Skip messages sent by me
     if (message.key.fromMe) {
       console.log("⏭️ Skipping my own message");
       return;
     }
+
     // Skip if no message content
     if (!message.message) {
       console.log("⏭️ Skipping message with no content");
@@ -36,6 +40,24 @@ async function handleIncomingMessages(messageUpdate, sock) {
 
     console.log(`From: ${from}`);
     console.log(`Text: "${messageText}"`);
+
+    // 🚨 SAFETY CHECK: Only respond to allowed group
+    const allowedGroupId = process.env.WA_GROUP_ID;
+
+    if (!allowedGroupId) {
+      console.log(
+        "⚠️ WA_GROUP_ID not set in .env file - ignoring all messages"
+      );
+      return;
+    }
+
+    if (from !== allowedGroupId) {
+      console.log(`🚫 Ignoring message from unauthorized chat: ${from}`);
+      console.log(`🚫 Expected: ${allowedGroupId}`);
+      return;
+    }
+
+    console.log("✅ Message from authorized group - processing...");
 
     // Handle different commands
     await handleCommands(messageText, from, sock, message);

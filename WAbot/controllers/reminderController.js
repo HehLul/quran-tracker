@@ -7,8 +7,7 @@ const GROUP_ID = process.env.WA_GROUP_ID; // Replace with your actual group ID
 const REMINDER_TIMES = [
   {
     time: "09:00",
-    message:
-      "🌅 Good morning! Don't forget to update your Quran reading for today!",
+    message: "🌅 Salam! Don't forget to update your Quran reading for today!",
   },
   {
     time: "20:00",
