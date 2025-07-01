@@ -47,10 +47,10 @@ async function handleCommands(messageText, from, sock, message) {
   const text = messageText.toLowerCase();
 
   // Test responses
-  if (text.includes("ping")) {
-    console.log("🏓 Sending pong response...");
-    await sock.sendMessage(from, { text: "🏓 Pong!" });
-  }
+  // if (text.includes("ping")) {
+  //   console.log("🏓 Sending pong response...");
+  //   await sock.sendMessage(from, { text: "🏓 Pong!" });
+  // }
 
   // Test Reminder
   if (text.includes("test reminder")) {
@@ -119,9 +119,9 @@ async function handleCommands(messageText, from, sock, message) {
           console.log(`✅ Successfully saved log entry ID: ${logEntry.id}`);
 
           await sock.sendMessage(from, {
-            text: `✅ Logged successfully!\n📖 ${action}: ${startVerse} → ${endVerse}\n📄 Estimated ${estimatedPages} page(s)\n👤 User: ${
+            text: `✅ Logged successfully!\n📖 ${action}: ${startVerse} → ${endVerse}\n👤 User: ${
               pushName || displayName
-            }\nMasha'Allah! Keep it up! 🤲`,
+            }`,
           });
         } catch (error) {
           console.error("❌ Database error details:");
@@ -192,7 +192,7 @@ Barakallahu feek! 🤲`;
         );
 
         await sock.sendMessage(from, {
-          text: `✅ Undone successfully!\n\n🗑️ Removed:\n📖 ${lastEntry.action}: ${lastEntry.start_verse} → ${lastEntry.end_verse}\n📅 Logged: ${loggedTime}\n👤 User: ${pushName}\n\nEntry has been deleted from your history.`,
+          text: `✅ Undone last entry.\n\n📖 ${lastEntry.action}: ${lastEntry.start_verse} → ${lastEntry.end_verse}\n📅 Logged: ${loggedTime}\n👤 User: ${pushName}`,
         });
       } else {
         console.log(`❌ No entries found for user: ${cleanUserId}`);
