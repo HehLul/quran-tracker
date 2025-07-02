@@ -7,6 +7,7 @@ const {
   getLastUserEntry,
   deleteLogEntry,
 } = require("./databaseController");
+const { getAllowedGroups } = require("./reminderController");
 
 // READ INCOMING MESSAGES
 async function handleIncomingMessages(messageUpdate, sock) {
@@ -41,19 +42,19 @@ async function handleIncomingMessages(messageUpdate, sock) {
     console.log(`From: ${from}`);
     console.log(`Text: "${messageText}"`);
 
-    // 🚨 SAFETY CHECK: Only respond to allowed group
-    const allowedGroupId = process.env.WA_GROUP_ID;
+    // 🚨 SAFETY CHECK: Use the SAME function as reminder controller
+    const allowedGroups = getAllowedGroups();
 
-    if (!allowedGroupId) {
+    if (allowedGroups.length === 0) {
       console.log(
-        "⚠️ WA_GROUP_ID not set in .env file - ignoring all messages"
+        "⚠️ No allowed groups configured in .env file - ignoring all messages"
       );
       return;
     }
 
-    if (from !== allowedGroupId) {
+    if (!allowedGroups.includes(from)) {
       console.log(`🚫 Ignoring message from unauthorized chat: ${from}`);
-      console.log(`🚫 Expected: ${allowedGroupId}`);
+      console.log(`🚫 Allowed groups: ${allowedGroups.join(", ")}`);
       return;
     }
 
@@ -174,8 +175,8 @@ async function handleCommands(messageText, from, sock, message) {
 
 📖 *Logging Commands:*
 - \`/log [action] [start] [end]\` - Log your reading
-  Actions: read, revise, memorize
-  Example: \`/log revise 9:16 9:48\`
+ Actions: read, revise, memorize
+ Example: \`/log revise 9:16 9:48\`
 
 ⚙️ *Utility Commands:*
 - \`/help\` - Show this menu
